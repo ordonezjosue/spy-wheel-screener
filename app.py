@@ -121,7 +121,7 @@ def screen_stocks(tickers):
 
 # RUN THE SCREEN
 loading_block = st.empty()
-loading_block.info("\ud83d\udd0d **Scanning S&P 500 tickers... Please wait while results are loading.**")
+loading_block.info("**Scanning S&P 500 tickers... Please wait while results are loading.**")
 
 df = screen_stocks(spy_tickers)
 loading_block.empty()
