@@ -131,7 +131,8 @@ def screen_stocks(tickers):
 
     progress.empty()
     df = pd.DataFrame(screened)
-    df = df.sort_values(by="Market Cap ($B)", ascending=False)
+    if not df.empty and "Market Cap ($B)" in df.columns:
+        df = df.sort_values(by="Market Cap ($B)", ascending=False)
     return df
 
 # Load and screen tickers
@@ -140,23 +141,28 @@ loading_block.info("Scanning S&P 500 tickers... Please wait while results are lo
 df = screen_stocks(spy_tickers)
 loading_block.empty()
 
-# Show results
-st.success(f"Showing {len(df)} stocks matching Wheel Strategy filters (excluding earnings in next 14 days).")
-gb = GridOptionsBuilder.from_dataframe(df)
-gb.configure_default_column(filter=True)
-grid_options = gb.build()
+# Handle empty results
+if df.empty:
+    st.warning("⚠️ No tickers matched the filter criteria. Try adjusting the filters or checking your internet connection.")
+else:
+    st.success(f"Showing {len(df)} stocks matching Wheel Strategy filters (excluding earnings in next 14 days).")
 
-AgGrid(
-    df,
-    gridOptions=grid_options,
-    height=400,
-    width='100%',
-    update_mode=GridUpdateMode.NO_UPDATE,
-    fit_columns_on_grid_load=True
-)
+    # Show results
+    gb = GridOptionsBuilder.from_dataframe(df)
+    gb.configure_default_column(filter=True)
+    grid_options = gb.build()
 
-# Download CSV
-st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+    AgGrid(
+        df,
+        gridOptions=grid_options,
+        height=400,
+        width='100%',
+        update_mode=GridUpdateMode.NO_UPDATE,
+        fit_columns_on_grid_load=True
+    )
+
+    # Download CSV
+    st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
 # Wheel strategy guidelines
 st.markdown("""
