@@ -153,7 +153,7 @@ else:
     df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
-    gb.configure_default_column(filter=False)  # Remove filter icons
+    gb.configure_default_column(filter=False, suppressMenu=True)  # Remove filter icons
     grid_options = gb.build()
 
     AgGrid(
