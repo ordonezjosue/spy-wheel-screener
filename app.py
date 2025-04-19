@@ -9,14 +9,14 @@ from io import BytesIO
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Set page config FIRST
+# Set page config
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Display the logo centered at the top
+# Display logo centered at the top
 logo = Image.open("wagon.png")
 buffered = BytesIO()
 logo.save(buffered, format="PNG")
@@ -30,15 +30,15 @@ st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", 
 st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
 st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
 
-# FILTER VALUES
+# Filter constants
 PRICE_MIN = 5
 PRICE_MAX = 50
 MARKET_CAP_MIN_B = 1
-DAYS_OUT = 0  # Closest expiration
+DAYS_OUT = 0
 EARNINGS_MIN_DAYS = 0
 EARNINGS_MAX_DAYS = 14
 
-# GET TICKERS
+# Get S&P 500 tickers
 @st.cache_data
 def get_spy_tickers():
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -47,7 +47,7 @@ def get_spy_tickers():
 
 spy_tickers = get_spy_tickers()
 
-# SCREENING FUNCTION
+# Screening function
 @st.cache_data
 def screen_stocks(tickers):
     screened = []
@@ -100,7 +100,6 @@ def screen_stocks(tickers):
                 put_strike = put["strike"]
                 premium_yield = (put_bid / price) * 100 if price > 0 else 0
 
-                # Optional filter: only include options with volume > 10 and OI > 100
                 if put_vol < 10 or put_oi < 100:
                     continue
 
@@ -108,4 +107,81 @@ def screen_stocks(tickers):
                     "Ticker": ticker,
                     "Price": round(price, 2),
                     "Market Cap ($B)": round(cap_b, 2),
-                    "IV": f"{iv
+                    "IV": f"{iv:.0%}" if iv is not None else "N/A",
+                    "Put Strike": put_strike,
+                    "Put Bid": round(put_bid, 2),
+                    "Premium Yield (%)": round(premium_yield, 2),
+                    "Volume": int(put_vol if pd.notna(put_vol) else 0),
+                    "Open Interest": int(put_oi if pd.notna(put_oi) else 0),
+                    "Earnings Date": pd.to_datetime(earnings_date).date() if earnings_date else "N/A"
+                })
+            return result
+        except Exception as e:
+            print(f"[ERROR] Ticker {ticker}: {e}")
+            return None
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(process_ticker, t): t for t in tickers}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                screened.extend(result)
+            completed += 1
+            progress.progress(completed / total)
+
+    progress.empty()
+    df = pd.DataFrame(screened)
+    df = df.sort_values(by="Market Cap ($B)", ascending=False)
+    return df
+
+# Load and screen tickers
+loading_block = st.empty()
+loading_block.info("Scanning S&P 500 tickers... Please wait while results are loading.")
+df = screen_stocks(spy_tickers)
+loading_block.empty()
+
+# Show results
+st.success(f"Showing {len(df)} stocks matching Wheel Strategy filters (excluding earnings in next 14 days).")
+gb = GridOptionsBuilder.from_dataframe(df)
+gb.configure_default_column(filter=True)
+grid_options = gb.build()
+
+AgGrid(
+    df,
+    gridOptions=grid_options,
+    height=400,
+    width='100%',
+    update_mode=GridUpdateMode.NO_UPDATE,
+    fit_columns_on_grid_load=True
+)
+
+# Download CSV
+st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+
+# Wheel strategy guidelines
+st.markdown("""
+---
+### 🛞 Wheel Strategy Guidelines
+
+**When initiating the Wheel Strategy with a Cash-Secured Put (CSP):**
+
+- **Strike Selection:**
+  - Choose a strike price *below the current stock price* (Out of the Money)
+  - Target a delta between 0.16 and 0.30 (25 is a sweet spot)
+
+- **DTE (Days to Expiration):**
+  - Preferred: 30 to 45 DTE
+  - Manage or roll around 21 DTE
+
+- **Premium Consideration:**
+  - Aim for premium ≥ 1% of strike price
+  - Higher IV = better premiums (but more volatility)
+
+- **Earnings Risk:**
+  - Avoid selling CSPs if earnings are due within 14 days
+
+- **Post-assignment:**
+  - Sell Covered Call 1–2 strikes above cost basis
+  - Repeat until assigned away
+---
+""")
