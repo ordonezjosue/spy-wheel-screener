@@ -44,7 +44,7 @@ def screen_stocks(tickers):
     for i, ticker in enumerate(tickers):
         if progress is not None:
             progress.progress(i / total)
-        time.sleep(1)  # ⏳ Prevent rate limiting
+        time.sleep(0.1)  # ⏳ Prevent rate limiting
 
         try:
             stock = yf.Ticker(ticker)
