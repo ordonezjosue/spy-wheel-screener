@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-st.markdown("<h1 style='text-align: center;'>\ud83c\udf9e\ufe0f SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
 st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
 
