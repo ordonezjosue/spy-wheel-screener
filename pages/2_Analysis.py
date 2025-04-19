@@ -7,7 +7,7 @@ import streamlit.components.v1 as components
 st.set_page_config(layout="wide")
 
 # Read ticker from query parameters instead of session_state
-params = st.experimental_get_query_params()
+params = st.query_params
 ticker = params.get("ticker", [None])[0]
 
 if not ticker:
