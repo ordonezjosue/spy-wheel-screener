@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+import time
 
 # -------------------- PAGE SETUP --------------------
 st.set_page_config(
@@ -11,9 +12,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-st.markdown("# 🛞 SPY Wheel Strategy Screener")
-st.markdown("### by **Josue Ordonez**")
-st.markdown("Scans **S&P 500 stocks** for Wheel setups using price, market cap, IV, put premiums, and earnings filters.")
+st.markdown("<h1 style='text-align: center;'>🛞 SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
+st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
 
 # -------------------- FILTER VALUES --------------------
 PRICE_MIN = 5
@@ -41,10 +42,13 @@ def screen_stocks(tickers):
     total = len(tickers)
 
     for i, ticker in enumerate(tickers):
-        progress.progress(i / total)
+        if progress is not None:
+            progress.progress(i / total)
+        time.sleep(1)  # ⏳ Prevent rate limiting
+
         try:
             stock = yf.Ticker(ticker)
-            info = stock.info
+            info = stock.info or {}
             price = info.get("currentPrice", 0)
             market_cap = info.get("marketCap", 0)
             cap_b = market_cap / 1e9 if market_cap else 0
@@ -72,11 +76,10 @@ def screen_stocks(tickers):
             if puts.empty:
                 continue
 
-            # Estimate delta using strike distance as a proxy (for illustrative filtering only)
             puts = puts.assign(delta_estimate=abs((puts["strike"] - price) / price))
             puts = puts[puts["strike"] < price]  # OTM only
             puts = puts.sort_values(by="delta_estimate")
-            near_25_delta_puts = puts.head(3)  # closest 3 strikes to 25-delta
+            near_25_delta_puts = puts.head(3)
 
             for _, put in near_25_delta_puts.iterrows():
                 put_bid = put["bid"]
@@ -99,7 +102,7 @@ def screen_stocks(tickers):
                 })
 
         except Exception as e:
-            st.write(f"❌ Error for {ticker}: {e}")
+            print(f"[ERROR] Ticker {ticker}: {e}")  # 🔒 Hide from users, log quietly
             continue
 
     progress.empty()
