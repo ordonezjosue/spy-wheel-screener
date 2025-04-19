@@ -21,7 +21,7 @@ PRICE_MIN = 5
 PRICE_MAX = 50
 MARKET_CAP_MIN_B = 1
 IV_THRESHOLD = 0.30
-DAYS_OUT = 0  # Use nearest expiration
+DAYS_OUT = 0
 EARNINGS_MIN_DAYS = 7
 EARNINGS_MAX_DAYS = 14
 
@@ -44,7 +44,7 @@ def screen_stocks(tickers):
     for i, ticker in enumerate(tickers):
         if progress is not None:
             progress.progress(i / total)
-        time.sleep(0.1)  # ⏳ Prevent rate limiting
+        time.sleep(1)  # Anti-rate-limit
 
         try:
             stock = yf.Ticker(ticker)
@@ -77,7 +77,7 @@ def screen_stocks(tickers):
                 continue
 
             puts = puts.assign(delta_estimate=abs((puts["strike"] - price) / price))
-            puts = puts[puts["strike"] < price]  # OTM only
+            puts = puts[puts["strike"] < price]
             puts = puts.sort_values(by="delta_estimate")
             near_25_delta_puts = puts.head(3)
 
@@ -102,7 +102,7 @@ def screen_stocks(tickers):
                 })
 
         except Exception as e:
-            print(f"[ERROR] Ticker {ticker}: {e}")  # 🔒 Hide from users, log quietly
+            print(f"[ERROR] Ticker {ticker}: {e}")
             continue
 
     progress.empty()
@@ -114,24 +114,17 @@ def screen_stocks(tickers):
 with st.spinner("🔍 Scanning S&P 500 tickers..."):
     df = screen_stocks(spy_tickers)
 
-# -------------------- COLOR-CODE PREMIUM YIELD --------------------
-def highlight_premium(val):
-    if isinstance(val, (int, float)):
-        if val >= 2:
-            return 'background-color: #d4edda'
-        elif val >= 1:
-            return 'background-color: #fff3cd'
-        else:
-            return 'background-color: #f8d7da'
-    return ''
+# -------------------- HIDE SELECTED COLUMNS --------------------
+display_df = df.drop(columns=["Market Cap ($B)", "IV", "Put Bid"])
 
-# -------------------- DISPLAY AND SELECT FROM AGGRID --------------------
+# -------------------- DISPLAY --------------------
 st.success(f"✅ Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7–14 days).")
-gb = GridOptionsBuilder.from_dataframe(df)
+gb = GridOptionsBuilder.from_dataframe(display_df)
 gb.configure_selection('single')
 grid_options = gb.build()
+
 AgGrid(
-    df,
+    display_df,
     gridOptions=grid_options,
     height=400,
     width='100%',
@@ -139,6 +132,7 @@ AgGrid(
     fit_columns_on_grid_load=True
 )
 
+# -------------------- DOWNLOAD FULL CSV --------------------
 st.download_button("📥 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
 # -------------------- WHEEL STRATEGY RULES --------------------
