@@ -6,7 +6,7 @@ import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
 
-st.image("logo.png", width=150)
+st.image("wagon.png", width=150)
 
 # PAGE SETUP
 st.set_page_config(
