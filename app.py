@@ -13,10 +13,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# Display logo centered at the top
+# --- Sidebar Filters ---
+st.sidebar.title("🔧 Screener Filters")
+
+PRICE_MIN = st.sidebar.slider("Minimum Price ($)", 1, 100, 5)
+PRICE_MAX = st.sidebar.slider("Maximum Price ($)", 10, 500, 50)
+MARKET_CAP_MIN_B = st.sidebar.slider("Min Market Cap ($B)", 0, 1000, 1)
+DAYS_OUT = st.sidebar.slider("Option Expiration Offset (DTE Index)", 0, 3, 0)
+FILTER_EARNINGS = st.sidebar.checkbox("Exclude Stocks with Earnings in 14 Days", True)
+MIN_VOL = st.sidebar.number_input("Min Put Volume", value=10)
+MIN_OI = st.sidebar.number_input("Min Open Interest", value=100)
+
+# --- Logo ---
 logo = Image.open("wagon.png")
 buffered = BytesIO()
 logo.save(buffered, format="PNG")
@@ -29,14 +40,6 @@ st.markdown(
 st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
 st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
-
-# Filter constants
-PRICE_MIN = 5
-PRICE_MAX = 50
-MARKET_CAP_MIN_B = 1
-DAYS_OUT = 0
-EARNINGS_MIN_DAYS = 0
-EARNINGS_MAX_DAYS = 14
 
 # Get S&P 500 tickers
 @st.cache_data
@@ -66,13 +69,12 @@ def screen_stocks(tickers):
             earnings_date = info.get("earningsDate")
 
             today = datetime.datetime.now().date()
-            if not earnings_date:
-                return None
-            if isinstance(earnings_date, (list, tuple)):
-                earnings_date = earnings_date[0]
-            days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
-            if days_to_earnings < EARNINGS_MIN_DAYS or days_to_earnings <= EARNINGS_MAX_DAYS:
-                return None
+            if earnings_date and FILTER_EARNINGS:
+                if isinstance(earnings_date, (list, tuple)):
+                    earnings_date = earnings_date[0]
+                days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
+                if 0 < days_to_earnings <= 14:
+                    return None
 
             if not (PRICE_MIN <= price <= PRICE_MAX and cap_b >= MARKET_CAP_MIN_B):
                 return None
@@ -100,7 +102,7 @@ def screen_stocks(tickers):
                 put_strike = put["strike"]
                 premium_yield = (put_bid / price) * 100 if price > 0 else 0
 
-                if put_vol < 10 or put_oi < 100:
+                if put_vol < MIN_VOL or put_oi < MIN_OI:
                     continue
 
                 result.append({
@@ -137,17 +139,15 @@ def screen_stocks(tickers):
 
 # Load and screen tickers
 loading_block = st.empty()
-loading_block.info("Scanning S&P 500 tickers... Please wait while results are loading.")
+loading_block.info("🔍 Scanning S&P 500 tickers… Please wait.")
 df = screen_stocks(spy_tickers)
 loading_block.empty()
 
-# Handle empty results
+# Show results
 if df.empty:
-    st.warning("⚠️ No tickers matched the filter criteria. Try adjusting the filters or checking your internet connection.")
+    st.warning("⚠️ No tickers matched the filter criteria. Try relaxing the filters in the sidebar.")
 else:
-    st.success(f"Showing {len(df)} stocks matching Wheel Strategy filters (excluding earnings in next 14 days).")
-
-    # Show results
+    st.success(f"✅ Showing {len(df)} matching Wheel Strategy candidates.")
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_default_column(filter=True)
     grid_options = gb.build()
@@ -161,10 +161,9 @@ else:
         fit_columns_on_grid_load=True
     )
 
-    # Download CSV
-    st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+    st.download_button("📥 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
-# Wheel strategy guidelines
+# Strategy guide
 st.markdown("""
 ---
 ### 🛞 Wheel Strategy Guidelines
