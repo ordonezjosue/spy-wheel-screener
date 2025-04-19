@@ -39,9 +39,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
-st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
+# --- Headers ---
+st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
+st.markdown(
+    "<p style='text-align: center;'>Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.</p>",
+    unsafe_allow_html=True
+)
 
 # --- Get S&P 500 Tickers ---
 @st.cache_data
@@ -155,7 +159,7 @@ else:
     df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
-    gb.configure_column("Market Cap ($B)", hide=True)  # Use for sorting, but hide visually
+    gb.configure_column("Market Cap ($B)", hide=True)
     gb.configure_default_column(filter=False, suppressMenu=True)
     grid_options = gb.build()
     grid_options["floatingFilter"] = False
@@ -164,13 +168,20 @@ else:
     AgGrid(
         df_display,
         gridOptions=grid_options,
-        height=400,
+        height=600,
         width='100%',
         update_mode=GridUpdateMode.NO_UPDATE,
-        fit_columns_on_grid_load=True
+        fit_columns_on_grid_load=True,
+        theme="streamlit"
     )
 
-    st.download_button("📥 Download CSV", df_display.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+    st.download_button(
+        "📥 Download CSV",
+        df_display.to_csv(index=False),
+        "spy_wheel_candidates.csv",
+        "text/csv",
+        use_container_width=True
+    )
 
 # --- Strategy Guide ---
 st.markdown("""
