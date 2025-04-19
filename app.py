@@ -157,26 +157,27 @@ st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates
 # STRATEGY GUIDE
 st.markdown("""
 ---
-### \ud83d\udcd8\ufe0f Wheel Strategy Guidelines
+### Wheel Strategy Guidelines
 **When initiating the Wheel Strategy with a Cash-Secured Put (CSP):**
 
-- \u2705 **Strike Selection:**
-  - Choose a strike price **below the current stock price** (Out of the Money)
-  - Target a delta between **0.16 and 0.30** (use 25 as a sweet spot)
+- **Strike Selection:**
+  - Choose a strike price *below the current stock price* (Out of the Money)
+  - Target a delta between 0.16 and 0.30 (use 25 as a sweet spot)
 
-- \u23f3 **DTE (Days to Expiration):**
-  - Preferred: **30 to 45 DTE**
+- **DTE (Days to Expiration):**
+  - Preferred: 30 to 45 DTE
   - Manage or roll around 21 DTE
 
-- \ud83d\udcb5 **Premium Consideration:**
-  - Target a premium yield of at least **1% of the strike price**
+- **Premium Consideration:**
+  - Target a premium yield of at least 1% of the strike price
   - Higher IV = better premiums (but may mean more volatility)
 
-- \u2757 **Earnings Risk:**
-  - Avoid selling CSPs with earnings reports due within **7\u201314 days**
+- **Earnings Risk:**
+  - Avoid selling CSPs with earnings reports due within 7–14 days
 
-- \ud83d\udcc8 **Post-assignment:**
-  - If assigned, sell a Covered Call 1\u20132 strikes above your cost basis
+- **Post-assignment:**
+  - If assigned, sell a Covered Call 1–2 strikes above your cost basis
   - Continue to generate premium until called away
 ---
 """)
+
