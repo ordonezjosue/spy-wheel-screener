@@ -1,4 +1,3 @@
-# --- app.py ---
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -16,9 +15,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Sidebar Filters ---
+# Sidebar Filters
 st.sidebar.title("🔧 Screener Filters")
-
 PRICE_MIN = st.sidebar.slider("Minimum Price ($)", 1, 100, 5)
 PRICE_MAX = st.sidebar.slider("Maximum Price ($)", 10, 500, 50)
 MARKET_CAP_MIN_B = st.sidebar.slider("Min Market Cap ($B)", 0, 1000, 1)
@@ -27,7 +25,7 @@ FILTER_EARNINGS = st.sidebar.checkbox("Exclude Stocks with Earnings in 14 Days",
 MIN_VOL = st.sidebar.number_input("Min Put Volume", value=10)
 MIN_OI = st.sidebar.number_input("Min Open Interest", value=100)
 
-# --- Logo ---
+# Logo display
 logo = Image.open("wagon.png")
 buffered = BytesIO()
 logo.save(buffered, format="PNG")
@@ -149,14 +147,15 @@ if df.empty:
 else:
     st.success(f"✅ Showing {len(df)} matching Wheel Strategy candidates.")
 
-    # Drop unwanted columns for display and download
+    # Drop IV and Earnings Date for display only
     df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
+    gb.configure_column("Market Cap ($B)", hide=True)  # Hide column but keep it sortable
     gb.configure_default_column(filter=False, suppressMenu=True)
     grid_options = gb.build()
-    grid_options["floatingFilter"] = False  # ⛔ Hides filter input boxes under column names
-    grid_options["enableFilter"] = False    # ⛔ Disables filtering completely
+    grid_options["floatingFilter"] = False
+    grid_options["enableFilter"] = False
 
     AgGrid(
         df_display,
