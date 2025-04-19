@@ -3,7 +3,11 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import datetime
+import base64
+from PIL import Image
+from io import BytesIO
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Set page config FIRST
 st.set_page_config(
@@ -13,10 +17,13 @@ st.set_page_config(
 )
 
 # Display the logo centered at the top
-from PIL import Image
 logo = Image.open("wagon.png")
-st.image(logo, width=150)
-
+buffered = BytesIO()
+logo.save(buffered, format="PNG")
+logo_b64 = base64.b64encode(buffered.getvalue()).decode()
+st.markdown(
+    f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150'></div>",
+    unsafe_allow_html=True
 )
 
 st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
@@ -27,8 +34,8 @@ st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market ca
 PRICE_MIN = 5
 PRICE_MAX = 50
 MARKET_CAP_MIN_B = 1
-DAYS_OUT = 0
-EARNINGS_MIN_DAYS = 7
+DAYS_OUT = 0  # Closest expiration
+EARNINGS_MIN_DAYS = 0
 EARNINGS_MAX_DAYS = 14
 
 # GET TICKERS
@@ -43,8 +50,6 @@ spy_tickers = get_spy_tickers()
 # SCREENING FUNCTION
 @st.cache_data
 def screen_stocks(tickers):
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
     screened = []
     progress = st.progress(0)
     total = len(tickers)
@@ -60,19 +65,20 @@ def screen_stocks(tickers):
             iv = info.get("impliedVolatility", None)
             earnings_date = info.get("earningsDate")
 
-            if earnings_date:
-                today = datetime.datetime.now().date()
-                if isinstance(earnings_date, (list, tuple)):
-                    earnings_date = earnings_date[0]
-                days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
-                if EARNINGS_MIN_DAYS <= days_to_earnings <= EARNINGS_MAX_DAYS:
-                    return None
+            today = datetime.datetime.now().date()
+            if not earnings_date:
+                return None
+            if isinstance(earnings_date, (list, tuple)):
+                earnings_date = earnings_date[0]
+            days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
+            if days_to_earnings < EARNINGS_MIN_DAYS or days_to_earnings <= EARNINGS_MAX_DAYS:
+                return None
 
             if not (PRICE_MIN <= price <= PRICE_MAX and cap_b >= MARKET_CAP_MIN_B):
                 return None
 
             expiration_dates = stock.options
-            if not expiration_dates:
+            if not expiration_dates or len(expiration_dates) <= DAYS_OUT:
                 return None
 
             exp_date = expiration_dates[DAYS_OUT]
@@ -94,85 +100,12 @@ def screen_stocks(tickers):
                 put_strike = put["strike"]
                 premium_yield = (put_bid / price) * 100 if price > 0 else 0
 
+                # Optional filter: only include options with volume > 10 and OI > 100
+                if put_vol < 10 or put_oi < 100:
+                    continue
+
                 result.append({
                     "Ticker": ticker,
                     "Price": round(price, 2),
                     "Market Cap ($B)": round(cap_b, 2),
-                    "IV": f"{iv:.0%}" if iv else "N/A",
-                    "Put Strike": put_strike,
-                    "Put Bid": round(put_bid, 2),
-                    "Premium Yield (%)": round(premium_yield, 2),
-                    "Volume": int(put_vol if pd.notna(put_vol) else 0),
-                    "Open Interest": int(put_oi if pd.notna(put_oi) else 0),
-                    "Earnings Date": pd.to_datetime(earnings_date).date() if earnings_date else "N/A"
-                })
-            return result
-        except Exception as e:
-            print(f"[ERROR] Ticker {ticker}: {e}")
-            return None
-
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(process_ticker, t): t for t in tickers}
-        for future in as_completed(futures):
-            result = future.result()
-            if result:
-                screened.extend(result)
-            completed += 1
-            progress.progress(completed / total)
-
-    progress.empty()
-    df = pd.DataFrame(screened)
-    df = df.sort_values(by="Market Cap ($B)", ascending=False)
-    return df
-
-# RUN THE SCREEN
-loading_block = st.empty()
-loading_block.info("Scanning S&P 500 tickers... Please wait while results are loading.")
-
-df = screen_stocks(spy_tickers)
-loading_block.empty()
-
-# DISPLAY GRID
-st.success(f"Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7–14 days).")
-gb = GridOptionsBuilder.from_dataframe(df)
-gb.configure_default_column(filter=False)
-grid_options = gb.build()
-
-AgGrid(
-    df,
-    gridOptions=grid_options,
-    height=400,
-    width='100%',
-    update_mode=GridUpdateMode.NO_UPDATE,
-    fit_columns_on_grid_load=True
-)
-
-# DOWNLOAD CSV
-st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
-
-# STRATEGY GUIDE
-st.markdown("""
----
-### Wheel Strategy Guidelines
-**When initiating the Wheel Strategy with a Cash-Secured Put (CSP):**
-
-- **Strike Selection:**
-  - Choose a strike price *below the current stock price* (Out of the Money)
-  - Target a delta between 0.16 and 0.30 (use 25 as a sweet spot)
-
-- **DTE (Days to Expiration):**
-  - Preferred: 30 to 45 DTE
-  - Manage or roll around 21 DTE
-
-- **Premium Consideration:**
-  - Target a premium yield of at least 1% of the strike price
-  - Higher IV = better premiums (but may mean more volatility)
-
-- **Earnings Risk:**
-  - Avoid selling CSPs with earnings reports due within 7–14 days
-
-- **Post-assignment:**
-  - If assigned, sell a Covered Call 1–2 strikes above your cost basis
-  - Continue to generate premium until called away
----
-""")
+                    "IV": f"{iv
