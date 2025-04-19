@@ -148,12 +148,16 @@ if df.empty:
     st.warning("⚠️ No tickers matched the filter criteria. Try relaxing the filters in the sidebar.")
 else:
     st.success(f"✅ Showing {len(df)} matching Wheel Strategy candidates.")
-    gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_default_column(filter=True)
+
+    # Drop unwanted columns for display and download
+    df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
+
+    gb = GridOptionsBuilder.from_dataframe(df_display)
+    gb.configure_default_column(filter=False)  # Remove filter icons
     grid_options = gb.build()
 
     AgGrid(
-        df,
+        df_display,
         gridOptions=grid_options,
         height=400,
         width='100%',
@@ -161,7 +165,7 @@ else:
         fit_columns_on_grid_load=True
     )
 
-    st.download_button("📥 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+    st.download_button("📥 Download CSV", df_display.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
 # Strategy guide
 st.markdown("""
