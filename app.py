@@ -127,7 +127,7 @@ df = screen_stocks(spy_tickers)
 loading_block.empty()
 
 # -------------------- HIDE SELECTED COLUMNS --------------------
-display_df = df.drop(columns=["Market Cap ($B)", "IV", "Put Bid"])
+display_df = df.drop(columns=["Market Cap ($B)", "IV", "Put Bid", "Earnings Date"])
 
 # -------------------- DISPLAY --------------------
 st.success(f"✅ Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7–14 days).")
