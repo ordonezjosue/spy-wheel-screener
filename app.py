@@ -44,7 +44,7 @@ def screen_stocks(tickers):
     for i, ticker in enumerate(tickers):
         if progress is not None:
             progress.progress(i / total)
-        time.sleep(1)
+        time.sleep(1)  # Rate limit protection
 
         try:
             stock = yf.Ticker(ticker)
@@ -86,4 +86,82 @@ def screen_stocks(tickers):
                 put_oi = put["openInterest"]
                 put_vol = put["volume"]
                 put_strike = put["strike"]
-                premium
+                premium_yield = (put_bid / price) * 100 if price > 0 else 0
+
+                screened.append({
+                    "Ticker": ticker,
+                    "Price": round(price, 2),
+                    "Market Cap ($B)": round(cap_b, 2),
+                    "IV": f"{iv:.0%}" if iv else "N/A",
+                    "Put Strike": put_strike,
+                    "Put Bid": round(put_bid, 2),
+                    "Premium Yield (%)": round(premium_yield, 2),
+                    "Volume": int(put_vol if pd.notna(put_vol) else 0),
+                    "Open Interest": int(put_oi if pd.notna(put_oi) else 0),
+                    "Earnings Date": pd.to_datetime(earnings_date).date() if earnings_date else "N/A"
+                })
+
+        except Exception as e:
+            print(f"[ERROR] Ticker {ticker}: {e}")
+            continue
+
+    progress.empty()
+    df = pd.DataFrame(screened)
+    df = df.sort_values(by="Market Cap ($B)", ascending=False)
+    return df
+
+# -------------------- RUN THE SCREEN (CUSTOM LOADING) --------------------
+loading_block = st.empty()
+loading_block.info("🔍 **Scanning S&P 500 tickers... Please wait while results are loading.**")
+
+df = screen_stocks(spy_tickers)
+
+loading_block.empty()
+
+# -------------------- HIDE SELECTED COLUMNS --------------------
+display_df = df.drop(columns=["Market Cap ($B)", "IV", "Put Bid"])
+
+# -------------------- DISPLAY --------------------
+st.success(f"✅ Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7–14 days).")
+gb = GridOptionsBuilder.from_dataframe(display_df)
+gb.configure_selection('single')
+grid_options = gb.build()
+
+AgGrid(
+    display_df,
+    gridOptions=grid_options,
+    height=400,
+    width='100%',
+    update_mode=GridUpdateMode.SELECTION_CHANGED,
+    fit_columns_on_grid_load=True
+)
+
+# -------------------- DOWNLOAD FULL CSV --------------------
+st.download_button("📥 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+
+# -------------------- WHEEL STRATEGY RULES --------------------
+st.markdown("""
+---
+### 📘 Wheel Strategy Guidelines
+**When initiating the Wheel Strategy with a Cash-Secured Put (CSP):**
+
+- ✅ **Strike Selection:**
+  - Choose a strike price **below the current stock price** (Out of the Money)
+  - Target a delta between **0.16 and 0.30** (use 25 as a sweet spot)
+
+- ⏳ **DTE (Days to Expiration):**
+  - Preferred: **30 to 45 DTE**
+  - Manage or roll around 21 DTE
+
+- 💵 **Premium Consideration:**
+  - Target a premium yield of at least **1% of the strike price**
+  - Higher IV = better premiums (but may mean more volatility)
+
+- ❗ **Earnings Risk:**
+  - Avoid selling CSPs with earnings reports due within **7–14 days**
+
+- 📈 **Post-assignment:**
+  - If assigned, sell a Covered Call 1–2 strikes above your cost basis
+  - Continue to generate premium until called away
+---
+""")
