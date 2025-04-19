@@ -121,7 +121,7 @@ def screen_stocks(tickers):
 
 # RUN THE SCREEN
 loading_block = st.empty()
-loading_block.info("**Scanning S&P 500 tickers... Please wait while results are loading.**")
+loading_block.info("Scanning S&P 500 tickers... Please wait while results are loading.")
 
 df = screen_stocks(spy_tickers)
 loading_block.empty()
@@ -148,8 +148,9 @@ grid_return = AgGrid(
 
 if grid_return['selected_rows']:
     selected_row = grid_return['selected_rows'][0]
-    st.session_state["selected_ticker"] = selected_row["Ticker"]
-    switch_page("pages/2_Analysis")
+    ticker = selected_row["Ticker"]
+    st.experimental_set_query_params(ticker=ticker)
+    switch_page("2_Analysis")
 
 # DOWNLOAD FULL CSV
 st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
@@ -180,4 +181,3 @@ st.markdown("""
   - Continue to generate premium until called away
 ---
 """)
-
