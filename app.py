@@ -16,14 +16,15 @@ st.set_page_config(
 )
 
 # Sidebar Filters
-st.sidebar.title("🔧 Screener Filters")
-PRICE_MIN = st.sidebar.slider("Minimum Price ($)", 1, 100, 5)
-PRICE_MAX = st.sidebar.slider("Maximum Price ($)", 10, 500, 50)
-MARKET_CAP_MIN_B = st.sidebar.slider("Min Market Cap ($B)", 0, 1000, 1)
-DAYS_OUT = st.sidebar.slider("Option Expiration Offset (DTE Index)", 0, 3, 0)
-FILTER_EARNINGS = st.sidebar.checkbox("Exclude Stocks with Earnings in 14 Days", True)
-MIN_VOL = st.sidebar.number_input("Min Put Volume", value=10)
-MIN_OI = st.sidebar.number_input("Min Open Interest", value=100)
+# Fixed filter values (no sidebar)
+PRICE_MIN = 5
+PRICE_MAX = 50
+MARKET_CAP_MIN_B = 1
+DAYS_OUT = 0
+FILTER_EARNINGS = True
+MIN_VOL = 10
+MIN_OI = 100
+
 
 # Logo display
 logo = Image.open("wagon.png")
