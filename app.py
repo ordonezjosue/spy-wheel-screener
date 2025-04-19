@@ -152,7 +152,7 @@ if grid_return['selected_rows']:
     switch_page("pages/2_Analysis")
 
 # DOWNLOAD FULL CSV
-st.download_button("\ud83d\udcc5 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+st.download_button("Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
 # STRATEGY GUIDE
 st.markdown("""
