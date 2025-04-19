@@ -13,9 +13,10 @@ st.set_page_config(
 )
 
 # Display the logo centered at the top
-st.markdown(
-    "<div style='text-align: center'><img src='wagon.png' width='150'></div>",
-    unsafe_allow_html=True
+from PIL import Image
+logo = Image.open("wagon.png")
+st.image(logo, width=150)
+
 )
 
 st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
