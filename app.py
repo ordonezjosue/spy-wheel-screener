@@ -11,7 +11,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-st.title("🛞 SPY Wheel Strategy Screener")
+st.markdown("# 🛞 SPY Wheel Strategy Screener")
+st.markdown("### by **Josue Ordonez**")
 st.markdown("Scans **S&P 500 stocks** for Wheel setups using price, market cap, IV, put premiums, and earnings filters.")
 
 # -------------------- FILTER VALUES --------------------
