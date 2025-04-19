@@ -133,6 +133,7 @@ display_df = df.drop(columns=["Market Cap ($B)", "IV", "Put Bid", "Earnings Date
 st.success(f"✅ Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7–14 days).")
 gb = GridOptionsBuilder.from_dataframe(display_df)
 gb.configure_selection('single')
+gb.configure_default_column(filter=False)
 grid_options = gb.build()
 
 AgGrid(
