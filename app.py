@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # -------------------- PAGE SETUP --------------------
 st.set_page_config(
@@ -34,18 +34,15 @@ def get_spy_tickers():
 
 spy_tickers = get_spy_tickers()
 
-# -------------------- SCREENING FUNCTION --------------------
+# -------------------- SCREENING FUNCTION (PARALLELIZED) --------------------
 @st.cache_data
 def screen_stocks(tickers):
     screened = []
     progress = st.progress(0)
     total = len(tickers)
+    completed = 0
 
-    for i, ticker in enumerate(tickers):
-        if progress is not None:
-            progress.progress(i / total)
-        time.sleep(1)  # Rate limit protection
-
+    def process_ticker(ticker):
         try:
             stock = yf.Ticker(ticker)
             info = stock.info or {}
@@ -61,26 +58,27 @@ def screen_stocks(tickers):
                     earnings_date = earnings_date[0]
                 days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
                 if EARNINGS_MIN_DAYS <= days_to_earnings <= EARNINGS_MAX_DAYS:
-                    continue
+                    return None
 
             if not (PRICE_MIN <= price <= PRICE_MAX and cap_b >= MARKET_CAP_MIN_B):
-                continue
+                return None
 
             expiration_dates = stock.options
             if not expiration_dates:
-                continue
+                return None
 
             exp_date = expiration_dates[DAYS_OUT]
             opt_chain = stock.option_chain(exp_date)
             puts = opt_chain.puts
             if puts.empty:
-                continue
+                return None
 
             puts = puts.assign(delta_estimate=abs((puts["strike"] - price) / price))
             puts = puts[puts["strike"] < price]
             puts = puts.sort_values(by="delta_estimate")
             near_25_delta_puts = puts.head(3)
 
+            result = []
             for _, put in near_25_delta_puts.iterrows():
                 put_bid = put["bid"]
                 put_oi = put["openInterest"]
@@ -88,7 +86,7 @@ def screen_stocks(tickers):
                 put_strike = put["strike"]
                 premium_yield = (put_bid / price) * 100 if price > 0 else 0
 
-                screened.append({
+                result.append({
                     "Ticker": ticker,
                     "Price": round(price, 2),
                     "Market Cap ($B)": round(cap_b, 2),
@@ -100,17 +98,27 @@ def screen_stocks(tickers):
                     "Open Interest": int(put_oi if pd.notna(put_oi) else 0),
                     "Earnings Date": pd.to_datetime(earnings_date).date() if earnings_date else "N/A"
                 })
+            return result
 
         except Exception as e:
             print(f"[ERROR] Ticker {ticker}: {e}")
-            continue
+            return None
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(process_ticker, ticker): ticker for ticker in tickers}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                screened.extend(result)
+            completed += 1
+            progress.progress(completed / total)
 
     progress.empty()
     df = pd.DataFrame(screened)
     df = df.sort_values(by="Market Cap ($B)", ascending=False)
     return df
 
-# -------------------- RUN THE SCREEN (CUSTOM LOADING) --------------------
+# -------------------- RUN THE SCREEN --------------------
 loading_block = st.empty()
 loading_block.info("🔍 **Scanning S&P 500 tickers... Please wait while results are loading.**")
 
