@@ -8,7 +8,7 @@ from io import BytesIO
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Set page config
+# Hide sidebar menu and default help buttons
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
@@ -19,10 +19,6 @@ st.set_page_config(
         "About": None
     }
 )
-
-# --- Dark Mode Toggle ---
-dark_mode = st.checkbox("🌙 Dark Mode", value=False)
-grid_theme = "material" if dark_mode else "streamlit"
 
 # --- Fixed Filters (no sidebar) ---
 PRICE_MIN = 5
@@ -159,11 +155,8 @@ if df.empty:
 else:
     st.success(f"✅ Showing {len(df)} matching Wheel Strategy candidates.")
 
-    # Drop hidden columns and convert ticker to link
+    # Drop columns not for display
     df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
-    df_display["Ticker"] = df_display["Ticker"].apply(
-        lambda x: f"[{x}](https://finance.yahoo.com/quote/{x})"
-    )
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_column("Market Cap ($B)", hide=True)
@@ -179,7 +172,7 @@ else:
         width='100%',
         update_mode=GridUpdateMode.NO_UPDATE,
         fit_columns_on_grid_load=True,
-        theme=grid_theme
+        theme="streamlit"
     )
 
     st.download_button(
