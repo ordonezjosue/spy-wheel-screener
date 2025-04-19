@@ -1,5 +1,3 @@
-st.image("logo.png", width=150)
-
 # --- app.py ---
 import yfinance as yf
 import pandas as pd
@@ -7,6 +5,8 @@ import streamlit as st
 import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from streamlit_extras.switch_page_button import switch_page
+
+st.image("logo.png", width=150)
 
 # PAGE SETUP
 st.set_page_config(
