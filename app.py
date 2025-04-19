@@ -1,3 +1,5 @@
+st.image("logo.png", width=150)
+
 # --- app.py ---
 import yfinance as yf
 import pandas as pd
