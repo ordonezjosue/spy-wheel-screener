@@ -8,15 +8,19 @@ from io import BytesIO
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Set page config
+# Hide sidebar menu and default help buttons
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed",
+    menu_items={
+        "Get Help": None,
+        "Report a bug": None,
+        "About": None
+    }
 )
 
-# Sidebar Filters
-# Fixed filter values (no sidebar)
+# --- Fixed Filters (no sidebar) ---
 PRICE_MIN = 5
 PRICE_MAX = 50
 MARKET_CAP_MIN_B = 1
@@ -25,8 +29,7 @@ FILTER_EARNINGS = True
 MIN_VOL = 10
 MIN_OI = 100
 
-
-# Logo display
+# --- Logo at Top Center ---
 logo = Image.open("wagon.png")
 buffered = BytesIO()
 logo.save(buffered, format="PNG")
@@ -40,7 +43,7 @@ st.markdown("<h1 style='text-align: center;'>SPY Wheel Strategy Screener</h1>", 
 st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
 st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
 
-# Get S&P 500 tickers
+# --- Get S&P 500 Tickers ---
 @st.cache_data
 def get_spy_tickers():
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -49,7 +52,7 @@ def get_spy_tickers():
 
 spy_tickers = get_spy_tickers()
 
-# Screening function
+# --- Stock Screening Logic ---
 @st.cache_data
 def screen_stocks(tickers):
     screened = []
@@ -136,23 +139,23 @@ def screen_stocks(tickers):
         df = df.sort_values(by="Market Cap ($B)", ascending=False)
     return df
 
-# Load and screen tickers
+# --- Run Screener ---
 loading_block = st.empty()
 loading_block.info("🔍 Scanning S&P 500 tickers… Please wait.")
 df = screen_stocks(spy_tickers)
 loading_block.empty()
 
-# Show results
+# --- Display Results ---
 if df.empty:
-    st.warning("⚠️ No tickers matched the filter criteria. Try relaxing the filters in the sidebar.")
+    st.warning("⚠️ No tickers matched the filter criteria.")
 else:
     st.success(f"✅ Showing {len(df)} matching Wheel Strategy candidates.")
 
-    # Drop IV and Earnings Date for display only
+    # Drop columns not for display
     df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
-    gb.configure_column("Market Cap ($B)", hide=True)  # Hide column but keep it sortable
+    gb.configure_column("Market Cap ($B)", hide=True)  # Use for sorting, but hide visually
     gb.configure_default_column(filter=False, suppressMenu=True)
     grid_options = gb.build()
     grid_options["floatingFilter"] = False
@@ -169,7 +172,7 @@ else:
 
     st.download_button("📥 Download CSV", df_display.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
-# Strategy guide
+# --- Strategy Guide ---
 st.markdown("""
 ---
 ### 🛞 Wheel Strategy Guidelines
