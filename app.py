@@ -1,31 +1,31 @@
+# --- app.py ---
 import yfinance as yf
 import pandas as pd
 import streamlit as st
 import datetime
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from streamlit_extras.switch_page_button import switch_page
 
-# -------------------- PAGE SETUP --------------------
+# PAGE SETUP
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-st.markdown("<h1 style='text-align: center;'>🛞 SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>\ud83c\udf9e\ufe0f SPY Wheel Strategy Screener</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>by Josue Ordonez</h3>", unsafe_allow_html=True)
 st.markdown("Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.", unsafe_allow_html=True)
 
-# -------------------- FILTER VALUES --------------------
+# FILTER VALUES
 PRICE_MIN = 5
 PRICE_MAX = 50
 MARKET_CAP_MIN_B = 1
-IV_THRESHOLD = 0.30
 DAYS_OUT = 0
 EARNINGS_MIN_DAYS = 7
 EARNINGS_MAX_DAYS = 14
 
-# -------------------- GET SPY TICKERS --------------------
+# GET TICKERS
 @st.cache_data
 def get_spy_tickers():
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -34,9 +34,11 @@ def get_spy_tickers():
 
 spy_tickers = get_spy_tickers()
 
-# -------------------- SCREENING FUNCTION (PARALLELIZED) --------------------
+# SCREENING FUNCTION
 @st.cache_data
 def screen_stocks(tickers):
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     screened = []
     progress = st.progress(0)
     total = len(tickers)
@@ -99,13 +101,12 @@ def screen_stocks(tickers):
                     "Earnings Date": pd.to_datetime(earnings_date).date() if earnings_date else "N/A"
                 })
             return result
-
         except Exception as e:
             print(f"[ERROR] Ticker {ticker}: {e}")
             return None
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(process_ticker, ticker): ticker for ticker in tickers}
+        futures = {executor.submit(process_ticker, t): t for t in tickers}
         for future in as_completed(futures):
             result = future.result()
             if result:
@@ -118,25 +119,25 @@ def screen_stocks(tickers):
     df = df.sort_values(by="Market Cap ($B)", ascending=False)
     return df
 
-# -------------------- RUN THE SCREEN --------------------
+# RUN THE SCREEN
 loading_block = st.empty()
-loading_block.info("🔍 **Scanning S&P 500 tickers... Please wait while results are loading.**")
+loading_block.info("\ud83d\udd0d **Scanning S&P 500 tickers... Please wait while results are loading.**")
 
 df = screen_stocks(spy_tickers)
-
 loading_block.empty()
 
-# -------------------- HIDE SELECTED COLUMNS --------------------
-display_df = df.drop(columns=["Market Cap ($B)", "IV", "Put Bid", "Earnings Date"])
+# HIDE SELECTED COLUMNS
+hidden_cols = ["Market Cap ($B)", "IV", "Put Bid", "Earnings Date"]
+display_df = df.drop(columns=hidden_cols)
 
-# -------------------- DISPLAY --------------------
-st.success(f"✅ Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7–14 days).")
+# DISPLAY GRID
+st.success(f"\u2705 Showing Top {len(df)} stocks matching Wheel Strategy filters (excluding earnings in 7\u201314 days).")
 gb = GridOptionsBuilder.from_dataframe(display_df)
 gb.configure_selection('single')
-gb.configure_default_column(filter=False)
+gb.configure_default_column(filter=False)  # Disable filter cone icons
 grid_options = gb.build()
 
-AgGrid(
+grid_return = AgGrid(
     display_df,
     gridOptions=grid_options,
     height=400,
@@ -145,32 +146,37 @@ AgGrid(
     fit_columns_on_grid_load=True
 )
 
-# -------------------- DOWNLOAD FULL CSV --------------------
-st.download_button("📥 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+if grid_return['selected_rows']:
+    selected_row = grid_return['selected_rows'][0]
+    st.session_state["selected_ticker"] = selected_row["Ticker"]
+    switch_page("pages/2_Analysis")
 
-# -------------------- WHEEL STRATEGY RULES --------------------
+# DOWNLOAD FULL CSV
+st.download_button("\ud83d\udcc5 Download CSV", df.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+
+# STRATEGY GUIDE
 st.markdown("""
 ---
-### 📘 Wheel Strategy Guidelines
+### \ud83d\udcd8\ufe0f Wheel Strategy Guidelines
 **When initiating the Wheel Strategy with a Cash-Secured Put (CSP):**
 
-- ✅ **Strike Selection:**
+- \u2705 **Strike Selection:**
   - Choose a strike price **below the current stock price** (Out of the Money)
   - Target a delta between **0.16 and 0.30** (use 25 as a sweet spot)
 
-- ⏳ **DTE (Days to Expiration):**
+- \u23f3 **DTE (Days to Expiration):**
   - Preferred: **30 to 45 DTE**
   - Manage or roll around 21 DTE
 
-- 💵 **Premium Consideration:**
+- \ud83d\udcb5 **Premium Consideration:**
   - Target a premium yield of at least **1% of the strike price**
   - Higher IV = better premiums (but may mean more volatility)
 
-- ❗ **Earnings Risk:**
-  - Avoid selling CSPs with earnings reports due within **7–14 days**
+- \u2757 **Earnings Risk:**
+  - Avoid selling CSPs with earnings reports due within **7\u201314 days**
 
-- 📈 **Post-assignment:**
-  - If assigned, sell a Covered Call 1–2 strikes above your cost basis
+- \ud83d\udcc8 **Post-assignment:**
+  - If assigned, sell a Covered Call 1\u20132 strikes above your cost basis
   - Continue to generate premium until called away
 ---
 """)
