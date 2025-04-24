@@ -6,13 +6,12 @@ import base64
 import requests
 from PIL import Image
 from io import BytesIO
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --- Twelve Data API Key ---
-TWELVE_API_KEY = "b77716c06e3e4332bb61a288a435e168"  # <-- Replace with your actual key
+TWELVE_API_KEY = "your_api_key_here"  # ← Replace with your Twelve Data key
 
-# --- Function to get earnings date from Twelve Data ---
+# --- Get Earnings Date from Twelve Data ---
 def get_earnings_date(symbol):
     try:
         url = f"https://api.twelvedata.com/earnings_calendar?symbol={symbol}&apikey={TWELVE_API_KEY}"
@@ -24,11 +23,11 @@ def get_earnings_date(symbol):
         print(f"[EARNINGS ERROR] {symbol}: {e}")
     return None
 
-# --- App Config ---
+# --- App Setup ---
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="collapsed"
 )
 
 # --- Logo ---
@@ -36,7 +35,10 @@ logo = Image.open("wagon.png")
 buffered = BytesIO()
 logo.save(buffered, format="PNG")
 logo_b64 = base64.b64encode(buffered.getvalue()).decode()
-st.markdown(f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150'></div>", unsafe_allow_html=True)
+st.markdown(
+    f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150'></div>",
+    unsafe_allow_html=True
+)
 
 st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
@@ -50,7 +52,7 @@ FILTER_EARNINGS = True
 MIN_VOL = 10
 MIN_OI = 100
 
-# --- Get S&P 500 tickers ---
+# --- Load S&P 500 Tickers ---
 @st.cache_data
 def get_spy_tickers():
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -59,7 +61,7 @@ def get_spy_tickers():
 
 spy_tickers = get_spy_tickers()
 
-# --- Main Screener ---
+# --- Screener Logic ---
 @st.cache_data
 def screen_stocks(tickers):
     screened = []
@@ -76,7 +78,7 @@ def screen_stocks(tickers):
             cap_b = market_cap / 1e9 if market_cap else 0
             iv = info.get("impliedVolatility", None)
 
-            # Earnings filter
+            # Get and apply earnings filter
             earnings_date = get_earnings_date(ticker)
             if FILTER_EARNINGS and earnings_date:
                 today = datetime.date.today()
@@ -151,25 +153,21 @@ loading_block.info("🔍 Scanning S&P 500 tickers… Please wait.")
 df = screen_stocks(spy_tickers)
 loading_block.empty()
 
-# --- Display Results ---
+# --- Display Results (Using st.dataframe instead of AgGrid) ---
 if df.empty:
     st.warning("⚠️ No tickers matched the filter criteria.")
 else:
     st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
 
-    df_display = df.drop(columns=["IV"], errors='ignore')
+    df_display = df.drop(columns=["IV"], errors='ignore')  # optional
+    st.dataframe(df_display, use_container_width=True)
 
-    gb = GridOptionsBuilder.from_dataframe(df_display)
-    gb.configure_column("Market Cap ($B)", hide=True)
-    gb.configure_default_column(filter=False, suppressMenu=True)
-    grid_options = gb.build()
-    grid_options["floatingFilter"] = False
-    grid_options["enableFilter"] = False
-
-    AgGrid(df_display, gridOptions=grid_options, height=600, width='100%',
-           update_mode=GridUpdateMode.NO_UPDATE, fit_columns_on_grid_load=True, theme="streamlit")
-
-    st.download_button("📥 Download CSV", df_display.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
+    st.download_button(
+        "📥 Download CSV",
+        df_display.to_csv(index=False),
+        "spy_wheel_candidates.csv",
+        "text/csv"
+    )
 
 # --- Strategy Notes ---
 st.markdown("""
@@ -177,9 +175,9 @@ st.markdown("""
 ### 🛞 Wheel Strategy Guidelines
 
 - **Strike:** 25 delta or lower
-- **DTE:** 30–45 days, manage at 21 DTE
+- **DTE:** 30–45 days preferred, manage at 21 DTE
 - **Premium:** Aim for ≥1% of strike
-- **Earnings:** Avoid within 14 days
-- **After Assignment:** Sell Covered Calls 1–2 strikes above
+- **Earnings:** Avoid if earnings in the next 14 days
+- **Post-assignment:** Sell Covered Calls 1–2 strikes above cost basis
 ---
 """)
