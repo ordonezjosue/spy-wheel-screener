@@ -3,24 +3,45 @@ import yfinance as yf
 import pandas as pd
 import datetime
 import base64
+import requests
 from PIL import Image
 from io import BytesIO
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Hide sidebar menu and default help buttons
+# --- Twelve Data API Key ---
+TWELVE_API_KEY = "your_api_key_here"  # <-- Replace with your actual key
+
+# --- Function to get earnings date from Twelve Data ---
+def get_earnings_date(symbol):
+    try:
+        url = f"https://api.twelvedata.com/earnings_calendar?symbol={symbol}&apikey={TWELVE_API_KEY}"
+        response = requests.get(url)
+        data = response.json()
+        if "earnings" in data and len(data["earnings"]) > 0:
+            return data["earnings"][0]["date"]
+    except Exception as e:
+        print(f"[EARNINGS ERROR] {symbol}: {e}")
+    return None
+
+# --- App Config ---
 st.set_page_config(
     page_title="Josue's SPY Wheel Screener",
     layout="wide",
     initial_sidebar_state="collapsed",
-    menu_items={
-        "Get Help": None,
-        "Report a bug": None,
-        "About": None
-    }
 )
 
-# --- Fixed Filters (no sidebar) ---
+# --- Logo ---
+logo = Image.open("wagon.png")
+buffered = BytesIO()
+logo.save(buffered, format="PNG")
+logo_b64 = base64.b64encode(buffered.getvalue()).decode()
+st.markdown(f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150'></div>", unsafe_allow_html=True)
+
+st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
+
+# --- Filters ---
 PRICE_MIN = 5
 PRICE_MAX = 50
 MARKET_CAP_MIN_B = 1
@@ -29,25 +50,7 @@ FILTER_EARNINGS = True
 MIN_VOL = 10
 MIN_OI = 100
 
-# --- Logo at Top Center ---
-logo = Image.open("wagon.png")
-buffered = BytesIO()
-logo.save(buffered, format="PNG")
-logo_b64 = base64.b64encode(buffered.getvalue()).decode()
-st.markdown(
-    f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150'></div>",
-    unsafe_allow_html=True
-)
-
-# --- Headers ---
-st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
-st.markdown(
-    "<p style='text-align: center;'>Scans <b>S&P 500 stocks</b> for Wheel setups using price, market cap, IV, put premiums, and earnings filters.</p>",
-    unsafe_allow_html=True
-)
-
-# --- Get S&P 500 Tickers ---
+# --- Get S&P 500 tickers ---
 @st.cache_data
 def get_spy_tickers():
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -56,7 +59,7 @@ def get_spy_tickers():
 
 spy_tickers = get_spy_tickers()
 
-# --- Stock Screening Logic ---
+# --- Main Screener ---
 @st.cache_data
 def screen_stocks(tickers):
     screened = []
@@ -72,14 +75,13 @@ def screen_stocks(tickers):
             market_cap = info.get("marketCap", 0)
             cap_b = market_cap / 1e9 if market_cap else 0
             iv = info.get("impliedVolatility", None)
-            earnings_date = info.get("earningsDate")
 
-            today = datetime.datetime.now().date()
-            if earnings_date and FILTER_EARNINGS:
-                if isinstance(earnings_date, (list, tuple)):
-                    earnings_date = earnings_date[0]
+            # Earnings filter
+            earnings_date = get_earnings_date(ticker)
+            if FILTER_EARNINGS and earnings_date:
+                today = datetime.date.today()
                 days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
-                if 0 < days_to_earnings <= 14:
+                if 0 <= days_to_earnings <= 14:
                     return None
 
             if not (PRICE_MIN <= price <= PRICE_MAX and cap_b >= MARKET_CAP_MIN_B):
@@ -125,7 +127,7 @@ def screen_stocks(tickers):
                 })
             return result
         except Exception as e:
-            print(f"[ERROR] Ticker {ticker}: {e}")
+            print(f"[ERROR] {ticker}: {e}")
             return None
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -139,7 +141,7 @@ def screen_stocks(tickers):
 
     progress.empty()
     df = pd.DataFrame(screened)
-    if not df.empty and "Market Cap ($B)" in df.columns:
+    if not df.empty:
         df = df.sort_values(by="Market Cap ($B)", ascending=False)
     return df
 
@@ -153,10 +155,9 @@ loading_block.empty()
 if df.empty:
     st.warning("⚠️ No tickers matched the filter criteria.")
 else:
-    st.success(f"✅ Showing {len(df)} matching Wheel Strategy candidates.")
+    st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
 
-    # Drop columns not for display
-    df_display = df.drop(columns=["IV", "Earnings Date"], errors='ignore')
+    df_display = df.drop(columns=["IV"], errors='ignore')
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
     gb.configure_column("Market Cap ($B)", hide=True)
@@ -165,48 +166,20 @@ else:
     grid_options["floatingFilter"] = False
     grid_options["enableFilter"] = False
 
-    AgGrid(
-        df_display,
-        gridOptions=grid_options,
-        height=600,
-        width='100%',
-        update_mode=GridUpdateMode.NO_UPDATE,
-        fit_columns_on_grid_load=True,
-        theme="streamlit"
-    )
+    AgGrid(df_display, gridOptions=grid_options, height=600, width='100%',
+           update_mode=GridUpdateMode.NO_UPDATE, fit_columns_on_grid_load=True, theme="streamlit")
 
-    st.download_button(
-        "📥 Download CSV",
-        df_display.to_csv(index=False),
-        "spy_wheel_candidates.csv",
-        "text/csv",
-        use_container_width=True
-    )
+    st.download_button("📥 Download CSV", df_display.to_csv(index=False), "spy_wheel_candidates.csv", "text/csv")
 
-# --- Strategy Guide ---
+# --- Strategy Notes ---
 st.markdown("""
 ---
 ### 🛞 Wheel Strategy Guidelines
 
-**When initiating the Wheel Strategy with a Cash-Secured Put (CSP):**
-
-- **Strike Selection:**
-  - Choose a strike price *below the current stock price* (Out of the Money)
-  - Target a delta between 0.16 and 0.30 (25 is a sweet spot)
-
-- **DTE (Days to Expiration):**
-  - Preferred: 30 to 45 DTE
-  - Manage or roll around 21 DTE
-
-- **Premium Consideration:**
-  - Aim for premium ≥ 1% of strike price
-  - Higher IV = better premiums (but more volatility)
-
-- **Earnings Risk:**
-  - Avoid selling CSPs if earnings are due within 14 days
-
-- **Post-assignment:**
-  - Sell Covered Call 1–2 strikes above cost basis
-  - Repeat until assigned away
+- **Strike:** 25 delta or lower
+- **DTE:** 30–45 days, manage at 21 DTE
+- **Premium:** Aim for ≥1% of strike
+- **Earnings:** Avoid within 14 days
+- **After Assignment:** Sell Covered Calls 1–2 strikes above
 ---
 """)
