@@ -10,7 +10,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --- Twelve Data API Key ---
-TWELVE_API_KEY = "your_api_key_here"  # <-- Replace with your actual key
+TWELVE_API_KEY = "b77716c06e3e4332bb61a288a435e168"  # <-- Replace with your actual key
 
 # --- Function to get earnings date from Twelve Data ---
 def get_earnings_date(symbol):
