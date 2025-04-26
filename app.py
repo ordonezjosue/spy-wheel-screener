@@ -153,7 +153,7 @@ loading_block.info("🔍 Scanning S&P 500 tickers… Please wait.")
 df = screen_stocks(spy_tickers)
 loading_block.empty()
 
-# --- Display Results (Using st.dataframe instead of AgGrid) ---
+# --- Display Results ---
 if df.empty:
     st.warning("⚠️ No tickers matched the filter criteria.")
 else:
@@ -179,5 +179,46 @@ st.markdown("""
 - **Premium:** Aim for ≥1% of strike
 - **Earnings:** Avoid if earnings in the next 14 days
 - **Post-assignment:** Sell Covered Calls 1–2 strikes above cost basis
+
+---
+
+### 📊 WHEEL STRATEGY: ACCOUNT SIZE GUIDELINES
+
+#### 💵 $100 Account (Micro Starter Account)
+- Play: Use fractional shares or penny stocks (under $5).
+- Premium Goal: $1–$2 per trade.
+- Profit Target: 50%–70%.
+- Stop Loss: 2x–3x premium collected.
+- Example Stocks: **SNDL, GPRO, NU**
+
+#### 💵 $1,000 Account (Small but Serious)
+- Play: Stocks $5–$15.
+- Premium Goal: $10–$20.
+- Profit Target: 50%–70%.
+- Stop Loss: 2x premium collected.
+- Example Stocks: **SOFI, Ford, CHPT, PLTR**
+
+#### 💵 $5,000 Account (Starter Wheel Account)
+- Play: Stocks $10–$50.
+- Premium Goal: $50+.
+- Profit Target: 50%–60%.
+- Stop Loss: 2x premium collected.
+- Example Stocks: **KO, PBR, MRO, CROX, WBD**
+
+#### 💵 $10,000 Account (Scaling Up)
+- Play: Stocks $20–$100.
+- Premium Goal: $75–$150.
+- Profit Target: 50%–60%.
+- Stop Loss: 2x–2.5x premium collected.
+- Example Stocks: **AAPL, CSCO, PFE, KO, XLF**
+
+---
+
+### ⚙️ Medium Risk Management Rules
+- Never risk more than 5% of your account on any one trade.
+- Close trades early at 50%–60% profit.
+- Always avoid stocks with earnings in the next 14 days.
+- Focus on stacking **consistent small wins**.
+
 ---
 """)
