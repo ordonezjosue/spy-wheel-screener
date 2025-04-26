@@ -159,7 +159,7 @@ if df.empty:
 else:
     st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
 
-    df_display = df.drop(columns=["IV"], errors='ignore')  # optional
+    df_display = df.drop(columns=["IV", "Put Bid", "Premium Yield (%)", "Earnings Date"], errors='ignore')  # optional
     st.dataframe(df_display, use_container_width=True)
 
     st.download_button(
