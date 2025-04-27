@@ -7,6 +7,28 @@ import requests
 from PIL import Image
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import streamlit_authenticator as stauth
+
+# --- LOGIN SYSTEM ---
+names = ['Josh Ordonez']
+usernames = ['josh']
+passwords = ['1234']
+
+authenticator = stauth.Authenticate(
+    names, usernames, passwords,
+    'cookie_name', 'secret_key', cookie_expiry_days=30
+)
+
+name, authentication_status, username = authenticator.login('Login', 'main')
+
+if authentication_status:
+    st.success(f'Welcome {name}!')
+elif authentication_status is False:
+    st.error('Username/password is incorrect')
+    st.stop()
+elif authentication_status is None:
+    st.warning('Please enter your username and password')
+    st.stop()
 
 # --- Twelve Data API Key ---
 TWELVE_API_KEY = "your_api_key_here"  # ← Replace with your Twelve Data key
@@ -78,7 +100,6 @@ def screen_stocks(tickers):
             cap_b = market_cap / 1e9 if market_cap else 0
             iv = info.get("impliedVolatility", None)
 
-            # Get and apply earnings filter
             earnings_date = get_earnings_date(ticker)
             if FILTER_EARNINGS and earnings_date:
                 today = datetime.date.today()
