@@ -10,13 +10,20 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import streamlit_authenticator as stauth
 
 # --- LOGIN SYSTEM ---
-names = ['Josh Ordonez']
-usernames = ['josh']
-passwords = ['1234']
+credentials = {
+    "usernames": {
+        "josh": {
+            "name": "Josh Ordonez",
+            "password": "1234"
+        }
+    }
+}
 
 authenticator = stauth.Authenticate(
-    names, usernames, passwords,
-    'cookie_name', 'secret_key', cookie_expiry_days=30
+    credentials,
+    'cookie_name',
+    'secret_key',
+    cookie_expiry_days=30
 )
 
 name, authentication_status, username = authenticator.login('Login', 'main')
