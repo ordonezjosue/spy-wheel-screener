@@ -9,36 +9,7 @@ from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import streamlit_authenticator as stauth
 
-# --- LOGIN SYSTEM ---
-credentials = {
-    "usernames": {
-        "josh": {
-            "name": "Josh Ordonez",
-            "password": "1234"
-        }
-    }
-}
 
-authenticator = stauth.Authenticate(
-    credentials,
-    'cookie_name',
-    'secret_key',
-    cookie_expiry_days=30
-)
-
-name, authentication_status, username = authenticator.login('Login', 'main')
-
-if authentication_status:
-    st.success(f'Welcome {name}!')
-elif authentication_status is False:
-    st.error('Username/password is incorrect')
-    st.stop()
-elif authentication_status is None:
-    st.warning('Please enter your username and password')
-    st.stop()
-
-# --- Twelve Data API Key ---
-TWELVE_API_KEY = "your_api_key_here"  # ← Replace with your Twelve Data key
 
 # --- Get Earnings Date from Twelve Data ---
 def get_earnings_date(symbol):
