@@ -9,8 +9,6 @@ from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import streamlit_authenticator as stauth
 
-
-
 # --- Get Earnings Date from Twelve Data ---
 def get_earnings_date(symbol):
     try:
@@ -42,6 +40,12 @@ st.markdown(
 
 st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
+
+# --- Account Size Dropdown ---
+account_size = st.selectbox(
+    "Select Account Size:",
+    ["$500", "$1000", "$2000", "$5000", "$10000", "$25000", "$50000", "$100000"]
+)
 
 # --- Filters ---
 PRICE_MIN = 5
@@ -153,12 +157,12 @@ df = screen_stocks(spy_tickers)
 loading_block.empty()
 
 # --- Display Results ---
-if df.empty:
+if df.empty():
     st.warning("⚠️ No tickers matched the filter criteria.")
 else:
     st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
 
-    df_display = df.drop(columns=["IV", "Put Bid", "Premium Yield (%)", "Earnings Date"], errors='ignore')  # optional
+    df_display = df.drop(columns=["IV", "Put Bid", "Premium Yield (%)", "Earnings Date"], errors='ignore')
     st.dataframe(df_display, use_container_width=True)
 
     st.download_button(
@@ -171,53 +175,43 @@ else:
 # --- Strategy Notes ---
 st.markdown("""
 ---
-### 🛞 Wheel Strategy Guidelines
-
+### 🚾 Wheel Strategy Guidelines
 - **Strike:** 25 delta or lower
 - **DTE:** 30–45 days preferred, manage at 21 DTE
 - **Premium:** Aim for ≥1% of strike
 - **Earnings:** Avoid if earnings in the next 14 days
 - **Post-assignment:** Sell Covered Calls 1–2 strikes above cost basis
-
 ---
-
 ### 📊 WHEEL STRATEGY: ACCOUNT SIZE GUIDELINES
-
 #### 💵 $100 Account (Micro Starter Account)
 - Play: Use fractional shares or penny stocks (under $5).
 - Premium Goal: $1–$2 per trade.
 - Profit Target: 50%–70%.
 - Stop Loss: 2x–3x premium collected.
 - Example Stocks: **SNDL, GPRO, NU**
-
 #### 💵 $1,000 Account (Small but Serious)
 - Play: Stocks $5–$15.
 - Premium Goal: $10–$20.
 - Profit Target: 50%–70%.
 - Stop Loss: 2x premium collected.
 - Example Stocks: **SOFI, Ford, CHPT, PLTR**
-
 #### 💵 $5,000 Account (Starter Wheel Account)
 - Play: Stocks $10–$50.
 - Premium Goal: $50+.
 - Profit Target: 50%–60%.
 - Stop Loss: 2x premium collected.
 - Example Stocks: **KO, PBR, MRO, CROX, WBD**
-
 #### 💵 $10,000 Account (Scaling Up)
 - Play: Stocks $20–$100.
 - Premium Goal: $75–$150.
 - Profit Target: 50%–60%.
 - Stop Loss: 2x–2.5x premium collected.
 - Example Stocks: **AAPL, CSCO, PFE, KO, XLF**
-
 ---
-
 ### ⚙️ Medium Risk Management Rules
 - Never risk more than 5% of your account on any one trade.
 - Close trades early at 50%–60% profit.
 - Always avoid stocks with earnings in the next 14 days.
 - Focus on stacking **consistent small wins**.
-
 ---
 """)
