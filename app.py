@@ -16,6 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+
 # --- Simple Password Protection ---
 st.markdown("""
     <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
@@ -25,7 +26,6 @@ st.markdown("""
 password = st.text_input("Password:", type="password")
 if password != "wheeling":
     st.stop()
-
 
 # --- Logo ---
 logo = Image.open("wagon.png")
@@ -40,25 +40,6 @@ st.markdown(
 st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
 
-# --- Account Size Dropdown ---
-account_size = st.selectbox(
-    "Select Account Size:",
-    ["$500", "$1000", "$2000", "$5000", "$10000", "$25000", "$50000", "$100000"]
-)
-
-account_price_mapping = {
-    "$500": 5,
-    "$1000": 10,
-    "$2000": 20,
-    "$5000": 60,
-    "$10000": 120,
-    "$25000": 150,
-    "$50000": 200,
-    "$100000": 400,
-}
-
-PRICE_MAX = account_price_mapping.get(account_size, 50)
-PRICE_MIN = 1
 
 # --- Display Current Screening Info ---
 st.info(f"🛒 Screening stocks priced under ${PRICE_MAX} based on your selected account size {account_size}.")
