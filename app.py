@@ -17,14 +17,21 @@ st.set_page_config(
 )
 
 # --- Simple Password Protection ---
-st.markdown("""
-    <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
-    <h3 style='text-align: center;'>Please enter the password to continue</h3>
-    """, unsafe_allow_html=True)
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
 
-password = st.text_input("Password:", type="password")
-if password != "wheeling":
-    st.stop()
+if not st.session_state.authenticated:
+    st.markdown("""
+        <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
+        <h3 style='text-align: center;'>Please enter the password to continue</h3>
+        """, unsafe_allow_html=True)
+
+    password = st.text_input("Password:", type="password")
+    if password == "wheeling":
+        st.session_state.authenticated = True
+        st.experimental_rerun()
+    else:
+        st.stop()
 
 # --- Logo ---
 logo = Image.open("wagon.png")
@@ -190,4 +197,5 @@ st.markdown("""
 
 # --- Logout Button ---
 if st.button("🔓 Logout"):
+    st.session_state.authenticated = False
     st.experimental_rerun()
