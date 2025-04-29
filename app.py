@@ -9,6 +9,13 @@ from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import streamlit_authenticator as stauth
 
+# --- App Setup ---
+st.set_page_config(
+    page_title="Josue's SPY Wheel Screener",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
 # --- Simple Password Protection ---
 st.markdown("""
     <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
@@ -19,12 +26,6 @@ password = st.text_input("Password:", type="password")
 if password != "wheeling":
     st.stop()
 
-# --- App Setup ---
-st.set_page_config(
-    page_title="Josue's SPY Wheel Screener",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
 
 # --- Logo ---
 logo = Image.open("wagon.png")
