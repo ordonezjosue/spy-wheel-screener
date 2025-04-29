@@ -44,6 +44,7 @@ if not st.session_state.authenticated:
     else:
         st.stop()
 
+
 # --- Logo ---
 logo = Image.open("wagon.png")
 buffered = BytesIO()
