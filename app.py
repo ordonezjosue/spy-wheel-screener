@@ -21,53 +21,49 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    st.markdown("""
-        <style>
-            .main, footer, header {visibility: hidden;}
-            div.block-container {padding-top: 8rem; text-align: center;}
-            .password-box {
-                padding: 2rem;
-                background-color: #111;
-                border-radius: 10px;
-                width: 400px;
-                margin: auto;
-                color: white;
-                box-shadow: 0 0 15px rgba(0,0,0,0.4);
-            }
-            .password-input input {
-                text-align: center;
-                font-size: 1.2rem;
-                padding: 0.5rem;
-                width: 100%;
-                border: 2px solid #ccc;
-                border-radius: 5px;
-                background-color: #fff;
-                color: #000;
-                margin-top: 1rem;
-            }
-        </style>
-        <div class='password-box'>
-            <h1 style='font-size: 2rem;'>🔒 Welcome to the SPY Wheel Screener</h1>
-            <p>Please enter the password below to access the strategy tool.</p>
-            <p style='margin: 1rem 0; font-size: 0.95rem;'>
-                You'll see a live screener of stocks in the S&P 500 with the best setups for the Wheel Strategy.
-                This includes price, market cap, volume, open interest, and put strike suggestions.
-            </p>
-            <p style='font-size: 0.9rem; margin-bottom: 1rem;'>
-                Want access? Send <strong>$25</strong> on Venmo to <strong>@ordonezjosue</strong>.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
+    with st.container():
+        st.markdown("""
+            <style>
+                .main, footer, header {visibility: hidden;}
+                div.block-container {padding-top: 6rem;}
+                .custom-box {
+                    background-color: #111;
+                    color: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    width: 400px;
+                    margin-left: auto;
+                    margin-right: auto;
+                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+                    text-align: center;
+                }
+                input {
+                    text-align: center !important;
+                }
+            </style>
+            <div class="custom-box">
+                <h1 style='font-size: 2rem;'>🔒 Welcome to the SPY Wheel Screener</h1>
+                <p>Please enter the password below to access the strategy tool.</p>
+                <p style='margin: 1rem 0; font-size: 0.95rem;'>
+                    You'll see a live screener of stocks in the S&P 500 with the best setups for the Wheel Strategy.
+                    This includes price, market cap, volume, open interest, and put strike suggestions.
+                </p>
+                <p style='font-size: 0.9rem; margin-bottom: 1rem;'>
+                    Want access? Send <strong>$25</strong> on Venmo to <strong>@ordonezjosue</strong>.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("<div class='password-input'>", unsafe_allow_html=True)
-    password = st.text_input("Enter Password", type="password", label_visibility="collapsed", placeholder="Enter password here")
-    st.markdown("</div>", unsafe_allow_html=True)
+        # Add password field directly below the centered panel
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            password = st.text_input("Enter Password", type="password", placeholder="Enter password here")
 
-    if password == "wheeling":
-        st.session_state.authenticated = True
-        st.rerun()
-    else:
-        st.stop()
+        if password == "wheeling":
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.stop()
 
 
 
