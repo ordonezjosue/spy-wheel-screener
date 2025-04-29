@@ -62,11 +62,6 @@ account_price_mapping = {
 PRICE_MAX = account_price_mapping.get(account_size, 50)
 PRICE_MIN = 1
 
-if account_size in ["$500", "$1000", "$2000"]:
-    MARKET_CAP_MIN_B = 0.1
-else:
-    MARKET_CAP_MIN_B = 1
-
 DAYS_OUT = 0
 FILTER_EARNINGS = True
 MIN_VOL = 10
@@ -81,7 +76,7 @@ def get_spy_tickers():
 spy_tickers = get_spy_tickers()
 
 # --- Screener Logic ---
-def screen_stocks(tickers, price_min, price_max, market_cap_min):
+def screen_stocks(tickers, price_min, price_max):
     screened = []
     progress = st.progress(0)
     total = len(tickers)
@@ -96,15 +91,15 @@ def screen_stocks(tickers, price_min, price_max, market_cap_min):
             cap_b = market_cap / 1e9 if market_cap else 0
             iv = info.get("impliedVolatility", None)
 
+            if not (price_min <= price <= price_max):
+                return None
+
             earnings_date = get_earnings_date(ticker)
             if FILTER_EARNINGS and earnings_date:
                 today = datetime.date.today()
                 days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
                 if 0 <= days_to_earnings <= 14:
                     return None
-
-            if cap_b < market_cap_min:
-                return None
 
             expiration_dates = stock.options
             if not expiration_dates or len(expiration_dates) <= DAYS_OUT:
@@ -164,7 +159,7 @@ def screen_stocks(tickers, price_min, price_max, market_cap_min):
 # --- Run Screener ---
 loading_block = st.empty()
 loading_block.info(f"🔍 Scanning S&P 500 tickers under ${PRICE_MAX} for account size {account_size}… Please wait.")
-df = screen_stocks(spy_tickers, PRICE_MIN, PRICE_MAX, MARKET_CAP_MIN_B)
+df = screen_stocks(spy_tickers, PRICE_MIN, PRICE_MAX)
 loading_block.empty()
 
 # --- Display Results ---
