@@ -16,23 +16,27 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Simple Modal Password Protection ---
+# --- Full-Screen Modal Password Protection ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    with st.sidebar:
-        st.markdown("""
-            <h2 style='text-align: center;'>🔒 Login Required</h2>
-            <p style='text-align: center;'>Please enter the password</p>
-        """, unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+            .main, footer, header {visibility: hidden;}
+            div.block-container {padding-top: 8rem;}
+        </style>
+        <div style='display: flex; flex-direction: column; align-items: center; justify-content: center;'>
+            <h1>🔐 Enter Password to Continue</h1>
+        </div>
+    """, unsafe_allow_html=True)
 
-        password = st.text_input("Password", type="password")
-        if password == "wheeling":
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.stop()
+    password = st.text_input("Password", type="password", label_visibility="collapsed")
+    if password == "wheeling":
+        st.session_state.authenticated = True
+        st.rerun()
+    else:
+        st.stop()
 
 # --- Logo ---
 logo = Image.open("wagon.png")
@@ -140,7 +144,7 @@ def screen_stocks(tickers, price_min, price_max):
 
 # --- Run Screener ---
 loading_block = st.empty()
-loading_block.info("🔍 Scanning all S&P 500 tickers… Please wait.")
+loading_block.info("🔍 Scanning all S&P 500 tickers… This could take a minute.")
 df = screen_stocks(spy_tickers, PRICE_MIN, PRICE_MAX)
 loading_block.empty()
 
