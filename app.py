@@ -83,8 +83,7 @@ def get_spy_tickers():
 spy_tickers = get_spy_tickers()
 
 # --- Screener Logic ---
-@st.cache_data
-def screen_stocks(tickers):
+def screen_stocks(tickers, price_min, price_max, market_cap_min):
     screened = []
     progress = st.progress(0)
     total = len(tickers)
@@ -106,7 +105,7 @@ def screen_stocks(tickers):
                 if 0 <= days_to_earnings <= 14:
                     return None
 
-            if not (PRICE_MIN <= price <= PRICE_MAX and cap_b >= MARKET_CAP_MIN_B):
+            if not (price_min <= price <= price_max and cap_b >= market_cap_min):
                 return None
 
             expiration_dates = stock.options
@@ -170,7 +169,7 @@ def screen_stocks(tickers):
 # --- Run Screener ---
 loading_block = st.empty()
 loading_block.info("🔍 Scanning S&P 500 tickers… Please wait.")
-df = screen_stocks(spy_tickers)
+df = screen_stocks(spy_tickers, PRICE_MIN, PRICE_MAX, MARKET_CAP_MIN_B)
 loading_block.empty()
 
 # --- Display Results ---
