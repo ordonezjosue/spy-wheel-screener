@@ -29,7 +29,7 @@ if not st.session_state.authenticated:
     password = st.text_input("Password:", type="password")
     if password == "wheeling":
         st.session_state.authenticated = True
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.stop()
 
@@ -198,4 +198,4 @@ st.markdown("""
 # --- Logout Button ---
 if st.button("🔓 Logout"):
     st.session_state.authenticated = False
-    st.experimental_rerun()
+    st.rerun()
