@@ -16,22 +16,23 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Simple Password Protection ---
+# --- Simple Modal Password Protection ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    st.markdown("""
-        <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
-        <h3 style='text-align: center;'>Please enter the password to continue</h3>
+    with st.sidebar:
+        st.markdown("""
+            <h2 style='text-align: center;'>🔒 Login Required</h2>
+            <p style='text-align: center;'>Please enter the password</p>
         """, unsafe_allow_html=True)
 
-    password = st.text_input("Password:", type="password")
-    if password == "wheeling":
-        st.session_state.authenticated = True
-        st.rerun()
-    else:
-        st.stop()
+        password = st.text_input("Password", type="password")
+        if password == "wheeling":
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.stop()
 
 # --- Logo ---
 logo = Image.open("wagon.png")
@@ -194,8 +195,3 @@ st.markdown("""
 - Avoid earnings within 14 days.
 ---
 """)
-
-# --- Logout Button ---
-if st.button("🔓 Logout"):
-    st.session_state.authenticated = False
-    st.rerun()
