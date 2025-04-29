@@ -34,15 +34,16 @@ if not st.session_state.authenticated:
                 color: white;
                 box-shadow: 0 0 15px rgba(0,0,0,0.4);
             }
-            input[type='password'] {
+            .password-input input {
                 text-align: center;
                 font-size: 1.2rem;
                 padding: 0.5rem;
-                width: 300px;
+                width: 100%;
                 border: 2px solid #ccc;
                 border-radius: 5px;
                 background-color: #fff;
                 color: #000;
+                margin-top: 1rem;
             }
         </style>
         <div class='password-box'>
@@ -52,18 +53,22 @@ if not st.session_state.authenticated:
                 You'll see a live screener of stocks in the S&P 500 with the best setups for the Wheel Strategy.
                 This includes price, market cap, volume, open interest, and put strike suggestions.
             </p>
-            <p style='font-size: 0.9rem; margin-top: 1.5rem;'>
+            <p style='font-size: 0.9rem; margin-bottom: 1rem;'>
                 Want access? Send <strong>$25</strong> on Venmo to <strong>@ordonezjosue</strong>.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<div class='password-input'>", unsafe_allow_html=True)
     password = st.text_input("Enter Password", type="password", label_visibility="collapsed", placeholder="Enter password here")
+    st.markdown("</div>", unsafe_allow_html=True)
+
     if password == "wheeling":
         st.session_state.authenticated = True
         st.rerun()
     else:
         st.stop()
+
 
 
 # --- Logo ---
