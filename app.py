@@ -9,17 +9,15 @@ from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import streamlit_authenticator as stauth
 
-# --- Get Earnings Date from Twelve Data ---
-def get_earnings_date(symbol):
-    try:
-        url = f"https://api.twelvedata.com/earnings_calendar?symbol={symbol}&apikey={TWELVE_API_KEY}"
-        response = requests.get(url)
-        data = response.json()
-        if "earnings" in data and len(data["earnings"]) > 0:
-            return data["earnings"][0]["date"]
-    except Exception as e:
-        print(f"[EARNINGS ERROR] {symbol}: {e}")
-    return None
+# --- Simple Password Protection ---
+st.markdown("""
+    <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
+    <h3 style='text-align: center;'>Please enter the password to continue</h3>
+    """, unsafe_allow_html=True)
+
+password = st.text_input("Password:", type="password")
+if password != "wheeling":
+    st.stop()
 
 # --- App Setup ---
 st.set_page_config(
@@ -47,7 +45,6 @@ account_size = st.selectbox(
     ["$500", "$1000", "$2000", "$5000", "$10000", "$25000", "$50000", "$100000"]
 )
 
-# --- Account Size to Price Range Mapping ---
 account_price_mapping = {
     "$500": 5,
     "$1000": 10,
@@ -62,10 +59,14 @@ account_price_mapping = {
 PRICE_MAX = account_price_mapping.get(account_size, 50)
 PRICE_MIN = 1
 
+# --- Display Current Screening Info ---
+st.info(f"🛒 Screening stocks priced under ${PRICE_MAX} based on your selected account size {account_size}.")
+
+# --- Timestamp ---
+st.caption(f"Last updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 DAYS_OUT = 0
 FILTER_EARNINGS = True
-MIN_VOL = 10
-MIN_OI = 100
 
 @st.cache_data
 def get_spy_tickers():
@@ -93,13 +94,6 @@ def screen_stocks(tickers, price_min, price_max):
 
             if not (price_min <= price <= price_max):
                 return None
-
-            earnings_date = get_earnings_date(ticker)
-            if FILTER_EARNINGS and earnings_date:
-                today = datetime.date.today()
-                days_to_earnings = (pd.to_datetime(earnings_date).date() - today).days
-                if 0 <= days_to_earnings <= 14:
-                    return None
 
             expiration_dates = stock.options
             if not expiration_dates or len(expiration_dates) <= DAYS_OUT:
@@ -134,7 +128,6 @@ def screen_stocks(tickers, price_min, price_max):
                     "Premium Yield (%)": round(premium_yield, 2),
                     "Volume": int(put_vol if pd.notna(put_vol) else 0),
                     "Open Interest": int(put_oi if pd.notna(put_oi) else 0),
-                    "Earnings Date": pd.to_datetime(earnings_date).date() if earnings_date else "N/A"
                 })
             return result
         except Exception as e:
@@ -164,7 +157,7 @@ loading_block.empty()
 
 # --- Display Results ---
 if df.empty:
-    st.warning("⚠️ No tickers matched the filter criteria. Try widening your price range or lowering volume/OI filters.")
+    st.warning("⚠️ No tickers matched the filter criteria.")
 else:
     st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
 
@@ -213,3 +206,7 @@ st.markdown("""
 - Avoid earnings within 14 days.
 ---
 """)
+
+# --- Logout Button ---
+if st.button("🔓 Logout"):
+    st.experimental_rerun()
