@@ -25,12 +25,15 @@ if not st.session_state.authenticated:
         <style>
             .main, footer, header {visibility: hidden;}
             div.block-container {padding-top: 8rem; text-align: center;}
-            .password-box {padding: 2rem; background-color: #111; border-radius: 10px; width: 400px; margin: auto;}
+            .password-box {padding: 2rem; background-color: #111; border-radius: 10px; width: 400px; margin: auto; color: white;}
             input[type='password'] {text-align: center; font-size: 1.2rem; padding: 0.5rem;}
         </style>
         <div class='password-box'>
             <h1 style='font-size: 2rem;'>🔒 Welcome to the SPY Wheel Screener</h1>
             <p>Please enter the password to continue</p>
+            <p style='margin-top: 2rem; font-size: 0.9rem;'>
+                Want access? Send <strong>$25</strong> on Venmo to <strong>@ordonezjosue</strong>.
+            </p>
         </div>
     """, unsafe_allow_html=True)
 
