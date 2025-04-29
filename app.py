@@ -62,7 +62,6 @@ account_price_mapping = {
 PRICE_MAX = account_price_mapping.get(account_size, 50)
 PRICE_MIN = 1
 
-# Adjust MARKET_CAP_MIN_B dynamically
 if account_size in ["$500", "$1000", "$2000"]:
     MARKET_CAP_MIN_B = 0.1
 else:
@@ -73,7 +72,6 @@ FILTER_EARNINGS = True
 MIN_VOL = 10
 MIN_OI = 100
 
-# --- Load S&P 500 Tickers ---
 @st.cache_data
 def get_spy_tickers():
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -105,7 +103,7 @@ def screen_stocks(tickers, price_min, price_max, market_cap_min):
                 if 0 <= days_to_earnings <= 14:
                     return None
 
-            if not (price_min <= price <= price_max and cap_b >= market_cap_min):
+            if cap_b < market_cap_min:
                 return None
 
             expiration_dates = stock.options
@@ -130,9 +128,6 @@ def screen_stocks(tickers, price_min, price_max, market_cap_min):
                 put_vol = put["volume"]
                 put_strike = put["strike"]
                 premium_yield = (put_bid / price) * 100 if price > 0 else 0
-
-                if put_vol < MIN_VOL or put_oi < MIN_OI:
-                    continue
 
                 result.append({
                     "Ticker": ticker,
@@ -168,17 +163,17 @@ def screen_stocks(tickers, price_min, price_max, market_cap_min):
 
 # --- Run Screener ---
 loading_block = st.empty()
-loading_block.info("🔍 Scanning S&P 500 tickers… Please wait.")
+loading_block.info(f"🔍 Scanning S&P 500 tickers under ${PRICE_MAX} for account size {account_size}… Please wait.")
 df = screen_stocks(spy_tickers, PRICE_MIN, PRICE_MAX, MARKET_CAP_MIN_B)
 loading_block.empty()
 
 # --- Display Results ---
 if df.empty:
-    st.warning("⚠️ No tickers matched the filter criteria.")
+    st.warning("⚠️ No tickers matched the filter criteria. Try widening your price range or lowering volume/OI filters.")
 else:
     st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
 
-    df_display = df.drop(columns=["IV", "Put Bid", "Premium Yield (%)", "Earnings Date"], errors='ignore')
+    df_display = df.drop(columns=["IV"], errors='ignore')
     st.dataframe(df_display, use_container_width=True)
 
     st.download_button(
