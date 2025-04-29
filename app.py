@@ -24,10 +24,13 @@ if not st.session_state.authenticated:
     st.markdown("""
         <style>
             .main, footer, header {visibility: hidden;}
-            div.block-container {padding-top: 8rem;}
+            div.block-container {padding-top: 8rem; text-align: center;}
+            .password-box {padding: 2rem; background-color: #111; border-radius: 10px; width: 400px; margin: auto;}
+            input[type='password'] {text-align: center; font-size: 1.2rem; padding: 0.5rem;}
         </style>
-        <div style='display: flex; flex-direction: column; align-items: center; justify-content: center;'>
-            <h1>🔐 Enter Password to Continue</h1>
+        <div class='password-box'>
+            <h1 style='font-size: 2rem;'>🔒 Welcome to the SPY Wheel Screener</h1>
+            <p>Please enter the password to continue</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -44,19 +47,21 @@ buffered = BytesIO()
 logo.save(buffered, format="PNG")
 logo_b64 = base64.b64encode(buffered.getvalue()).decode()
 st.markdown(
-    f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150'></div>",
+    f"<div style='text-align: center;'><img src='data:image/png;base64,{logo_b64}' width='150' style='margin-top: 1rem;'></div>",
     unsafe_allow_html=True
 )
 
-st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
+st.markdown("""
+    <h2 style='text-align: center; margin-top: 0.5rem;'>SPY Wheel Strategy Screener</h2>
+    <h4 style='text-align: center; color: gray;'>by Josue Ordonez</h4>
+""", unsafe_allow_html=True)
 
 # --- Static Price Range ---
 PRICE_MIN = 1
 PRICE_MAX = 1000
 
 # --- Timestamp ---
-st.caption(f"Last updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.caption(f"🕒 Last updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 DAYS_OUT = 0
 FILTER_EARNINGS = True
@@ -176,10 +181,6 @@ st.markdown("""
 
 ---
 ### 📊 Wheel Strategy: Account Size Guidelines
-
-#### 💵 $100–$500 Account
-- Fractional shares, penny stocks (under $5)
-- Example: **SNDL, GPRO, NU**
 
 #### 💵 $1,000–$2,000 Account
 - Stocks priced under $10–$20
