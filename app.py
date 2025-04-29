@@ -168,7 +168,7 @@ df = screen_stocks(spy_tickers)
 loading_block.empty()
 
 # --- Display Results ---
-if df.empty():
+if df.empty:
     st.warning("⚠️ No tickers matched the filter criteria.")
 else:
     st.success(f"✅ {len(df)} Wheel Strategy candidates found.")
