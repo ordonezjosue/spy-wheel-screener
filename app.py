@@ -25,19 +25,40 @@ if not st.session_state.authenticated:
         <style>
             .main, footer, header {visibility: hidden;}
             div.block-container {padding-top: 8rem; text-align: center;}
-            .password-box {padding: 2rem; background-color: #111; border-radius: 10px; width: 400px; margin: auto; color: white;}
-            input[type='password'] {text-align: center; font-size: 1.2rem; padding: 0.5rem;}
+            .password-box {
+                padding: 2rem;
+                background-color: #111;
+                border-radius: 10px;
+                width: 400px;
+                margin: auto;
+                color: white;
+                box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            }
+            input[type='password'] {
+                text-align: center;
+                font-size: 1.2rem;
+                padding: 0.5rem;
+                width: 300px;
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                background-color: #fff;
+                color: #000;
+            }
         </style>
         <div class='password-box'>
             <h1 style='font-size: 2rem;'>🔒 Welcome to the SPY Wheel Screener</h1>
-            <p>Please enter the password to continue</p>
-            <p style='margin-top: 2rem; font-size: 0.9rem;'>
+            <p>Please enter the password below to access the strategy tool.</p>
+            <p style='margin: 1rem 0; font-size: 0.95rem;'>
+                You'll see a live screener of stocks in the S&P 500 with the best setups for the Wheel Strategy.
+                This includes price, market cap, volume, open interest, and put strike suggestions.
+            </p>
+            <p style='font-size: 0.9rem; margin-top: 1.5rem;'>
                 Want access? Send <strong>$25</strong> on Venmo to <strong>@ordonezjosue</strong>.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-    password = st.text_input("Password", type="password", label_visibility="collapsed")
+    password = st.text_input("Enter Password", type="password", label_visibility="collapsed", placeholder="Enter password here")
     if password == "wheeling":
         st.session_state.authenticated = True
         st.rerun()
