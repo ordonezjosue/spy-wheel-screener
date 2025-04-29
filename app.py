@@ -16,7 +16,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-
 # --- Simple Password Protection ---
 st.markdown("""
     <h1 style='text-align: center;'>🔒 Welcome to the SPY Wheel Screener</h1>
@@ -40,9 +39,9 @@ st.markdown(
 st.markdown("<h2 style='text-align: center;'>SPY Wheel Strategy Screener</h2>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>by Josue Ordonez</h4>", unsafe_allow_html=True)
 
-
-# --- Display Current Screening Info ---
-st.info(f"🛒 Screening stocks priced under ${PRICE_MAX} based on your selected account size {account_size}.")
+# --- Static Price Range ---
+PRICE_MIN = 1
+PRICE_MAX = 1000
 
 # --- Timestamp ---
 st.caption(f"Last updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -133,7 +132,7 @@ def screen_stocks(tickers, price_min, price_max):
 
 # --- Run Screener ---
 loading_block = st.empty()
-loading_block.info(f"🔍 Scanning S&P 500 tickers under ${PRICE_MAX} for account size {account_size}… Please wait.")
+loading_block.info("🔍 Scanning all S&P 500 tickers… Please wait.")
 df = screen_stocks(spy_tickers, PRICE_MIN, PRICE_MAX)
 loading_block.empty()
 
