@@ -52,16 +52,22 @@ account_price_mapping = {
     "$500": 5,
     "$1000": 10,
     "$2000": 20,
-    "$5000": 50,
-    "$10000": 100,
+    "$5000": 60,
+    "$10000": 120,
     "$25000": 150,
     "$50000": 200,
-    "$100000": 300,
+    "$100000": 400,
 }
 
 PRICE_MAX = account_price_mapping.get(account_size, 50)
 PRICE_MIN = 1
-MARKET_CAP_MIN_B = 1
+
+# Adjust MARKET_CAP_MIN_B dynamically
+if account_size in ["$500", "$1000", "$2000"]:
+    MARKET_CAP_MIN_B = 0.1
+else:
+    MARKET_CAP_MIN_B = 1
+
 DAYS_OUT = 0
 FILTER_EARNINGS = True
 MIN_VOL = 10
@@ -194,45 +200,27 @@ st.markdown("""
 - **Post-assignment:** Sell Covered Calls 1–2 strikes above cost basis
 
 ---
+### 📊 Wheel Strategy: Account Size Guidelines
 
-### 📊 WHEEL STRATEGY: ACCOUNT SIZE GUIDELINES
+#### 💵 $100–$500 Account
+- Fractional shares, penny stocks (under $5)
+- Example: **SNDL, GPRO, NU**
 
-#### 💵 $100 Account (Micro Starter Account)
-- Play: Use fractional shares or penny stocks (under $5).
-- Premium Goal: $1–$2 per trade.
-- Profit Target: 50%–70%.
-- Stop Loss: 2x–3x premium collected.
-- Example Stocks: **SNDL, GPRO, NU**
+#### 💵 $1,000–$2,000 Account
+- Stocks priced under $10–$20
+- Example: **SOFI, F, PLTR**
 
-#### 💵 $1,000 Account (Small but Serious)
-- Play: Stocks $5–$15.
-- Premium Goal: $10–$20.
-- Profit Target: 50%–70%.
-- Stop Loss: 2x premium collected.
-- Example Stocks: **SOFI, Ford, CHPT, PLTR**
+#### 💵 $5,000–$10,000 Account
+- Stocks priced up to $100
+- Example: **KO, MRO, PBR**
 
-#### 💵 $5,000 Account (Starter Wheel Account)
-- Play: Stocks $10–$50.
-- Premium Goal: $50+.
-- Profit Target: 50%–60%.
-- Stop Loss: 2x premium collected.
-- Example Stocks: **KO, PBR, MRO, CROX, WBD**
-
-#### 💵 $10,000 Account (Scaling Up)
-- Play: Stocks $20–$100.
-- Premium Goal: $75–$150.
-- Profit Target: 50%–60%.
-- Stop Loss: 2x–2.5x premium collected.
-- Example Stocks: **AAPL, CSCO, PFE, KO, XLF**
+#### 💵 $25,000+ Account
+- Full use of larger stocks (AAPL, MSFT)
 
 ---
-
 ### ⚙️ Medium Risk Management Rules
-- Never risk more than 5% of your account on any one trade.
-- Close trades early at 50%–60% profit.
-- Always avoid stocks with earnings in the next 14 days.
-- Focus on stacking **consistent small wins**.
-
+- Never risk more than 5% of your account per trade.
+- Close early at 50% profit.
+- Avoid earnings within 14 days.
 ---
 """)
-
